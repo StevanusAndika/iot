@@ -1,0 +1,9 @@
+-- schema.sql
+CREATE TABLE IF NOT EXISTS faces (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    vector TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_name ON faces(name);
