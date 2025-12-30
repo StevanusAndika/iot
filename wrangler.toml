@@ -1,4 +1,8 @@
+<<<<<<< HEAD
 name = "face-recognition-worker"
+=======
+name = "iot"
+>>>>>>> f125e58ef3481dc4b5a2862577efcc863cccbd3a
 main = "src/worker.js"
 compatibility_date = "2024-12-27"
 
