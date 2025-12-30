@@ -32,7 +32,6 @@
   .storage-controls{display:flex;gap:10px;margin-top:15px;padding:15px;background:rgba(59,130,246,0.1);border-radius:8px;flex-wrap:wrap}
   .storage-status{margin-top:10px;padding:10px;border-radius:8px;background:rgba(16,185,129,0.1);color:var(--success);font-size:13px}
 </style>
-<meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
 </head>
 <body>
   <div class="card">
@@ -91,6 +90,34 @@
       </div>
     </div>
 
+    <!-- TAMBAHAN: Local Storage Controls -->
+    <div class="section">
+      <h3>💾 Local Storage Management</h3>
+      <p class="muted" style="margin-bottom:10px;">
+        Kelola data wajah di local storage browser
+      </p>
+      
+      <div class="storage-controls">
+        <div style="flex:1">
+          <label>📝 Nama untuk Simpan Manual</label>
+          <input id="manualName" placeholder="Masukkan nama untuk simpan manual">
+        </div>
+        <div class="row" style="margin-top:20px;width:100%;">
+          <button id="saveCurrentFace" class="success" disabled>💾 Simpan Wajah Sekarang</button>
+          <button id="getLocalData" class="secondary">📱 Lihat Data Lokal</button>
+          <button id="clearLocalData" class="error">🗑️ Hapus Semua Data Lokal</button>
+          <button id="exportLocalData" class="secondary">📤 Export ke File</button>
+          <label class="secondary" style="padding:10px 16px;border-radius:10px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;background:#334155">
+            📥 Import dari File<input id="importLocalData" type="file" accept="application/json" style="display:none">
+          </label>
+        </div>
+      </div>
+      
+      <div id="localStorageStatus" style="display:none;margin-top:10px;padding:10px;border-radius:8px;background:rgba(59,130,246,0.1);color:var(--text);font-size:13px">
+        Status local storage akan muncul di sini
+      </div>
+    </div>
+
     <!-- TAMBAHAN: Cloudflare Storage Controls -->
     <div class="section">
       <h3>☁️ Cloudflare D1 Database Storage</h3>
@@ -108,11 +135,10 @@
           <input id="cfApiToken" placeholder="your-api-token" value="" type="password">
         </div>
         <div class="row" style="margin-top:20px;width:100%;">
-          <button id="getLocalData" class="secondary">📱 Get Local Data</button>
-          <button id="getCloudData" class="success">☁️ Get Cloud Data</button>
-          <button id="setToCloud" class="success">📤 Sync to Cloud</button>
-          <button id="loadFromCloud" class="secondary">📥 Load from Cloud</button>
-          <button id="testCloudConnection" class="success">🔍 Test Connection</button>
+          <button id="getCloudData" class="success">☁️ Ambil Data dari Cloud</button>
+          <button id="syncToCloud" class="success">📤 Sync ke Cloud</button>
+          <button id="loadFromCloud" class="secondary">📥 Load dari Cloud ke Lokal</button>
+          <button id="testCloudConnection" class="success">🔍 Test Koneksi</button>
         </div>
       </div>
       
@@ -141,12 +167,11 @@
           <input id="th" value="0.90" type="number" step="0.01" min="0.5" max="1.0">
         </div>
         <div class="row">
-          <button id="enroll" class="secondary" disabled>📸 Enroll Face</button>
-          <button id="clearDb" class="error">🗑️ Clear DB</button>
-          <button id="exportDb" class="secondary">📤 Export</button>
-          <label class="secondary" style="padding:10px 16px;border-radius:10px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;background:#334155">
-            📥 Import<input id="importDb" type="file" accept="application/json" style="display:none">
-          </label>
+          <button id="enroll" class="secondary" disabled>📸 Enroll Face (Otomatis)</button>
+          <button id="exportDb" class="secondary">📤 Export JSON</button>
+          <div id="dbStatus" style="padding:10px 16px;border-radius:10px;background:rgba(59,130,246,0.1);color:var(--text);font-size:14px">
+            Data: 0 wajah
+          </div>
         </div>
       </div>
     </div>
@@ -191,15 +216,23 @@
   const camSourceEl = $("cameraSource"), nthEl = $("nth"), sizeEl = $("size"), 
         btnS = $("start"), btnT = $("stop"), showVideoCb = $("showVideo");
   const nameEl = $("name"), samplesEl = $("samples"), thEl = $("th"), 
-        btnEnroll = $("enroll"), btnClear = $("clearDb"), btnExport = $("exportDb"), 
-        inImport = $("importDb");
+        btnEnroll = $("enroll"), btnExport = $("exportDb"), dbStatusEl = $("dbStatus");
   const espUrlEl = $("espUrl"), espKeyEl = $("espKey"), espOffEl = $("espOff"), 
         btnTestOn = $("testOn"), btnTestOff = $("testOff"), autoTriggerEl = $("autoTrigger"),
         testConnBtn = $("testConnection"), connStatusEl = $("connectionStatus");
+  
+  // Local Storage elements
+  const manualNameEl = $("manualName"), btnSaveCurrent = $("saveCurrentFace"),
+        btnGetLocal = $("getLocalData"), btnClearLocal = $("clearLocalData"),
+        btnExportLocal = $("exportLocalData"), importLocalEl = $("importLocalData"),
+        localStorageStatusEl = $("localStorageStatus");
+  
+  // Cloudflare elements
   const cfWorkerUrlEl = $("cfWorkerUrl"), cfApiTokenEl = $("cfApiToken"),
-        getLocalDataBtn = $("getLocalData"), getCloudDataBtn = $("getCloudData"),
-        setToCloudBtn = $("setToCloud"), loadFromCloudBtn = $("loadFromCloud"),
-        testCloudConnBtn = $("testCloudConnection"), cloudStatusEl = $("cloudStatus");
+        btnGetCloud = $("getCloudData"), btnSyncToCloud = $("syncToCloud"),
+        btnLoadFromCloud = $("loadFromCloud"), btnTestCloud = $("testCloudConnection"),
+        cloudStatusEl = $("cloudStatus");
+  
   const statusEl = $("status"), logEl = $("log"), video = $("video"), 
         canvas = $("canvas"), ctx = canvas.getContext('2d');
 
@@ -210,6 +243,7 @@
       lastFPS = 0, procCount = 0;
   let classifier = null, gray = null, rgba = null;
   let usingESP32Camera = true;
+  let currentFaceDescriptor = null; // Untuk simpan wajah saat ini
   
   const cascadeURL = 'https://raw.githubusercontent.com/opencv/opencv/master/data/haarcascades/haarcascade_frontalface_alt2.xml';
   const DB_KEY = 'face_db_v2';
@@ -220,6 +254,27 @@
     console.log(...args); 
     const timestamp = new Date().toLocaleTimeString();
     logEl.textContent = `[${timestamp}] ${args.join(" ")}\n` + logEl.textContent.slice(0, 2000); 
+  }
+
+  function showLocalStatus(message, type = 'info') {
+    localStorageStatusEl.style.display = 'block';
+    localStorageStatusEl.textContent = message;
+    
+    if (type === 'success') {
+      localStorageStatusEl.style.backgroundColor = 'rgba(16,185,129,0.1)';
+      localStorageStatusEl.style.color = 'var(--success)';
+    } else if (type === 'error') {
+      localStorageStatusEl.style.backgroundColor = 'rgba(239,68,68,0.1)';
+      localStorageStatusEl.style.color = 'var(--error)';
+    } else {
+      localStorageStatusEl.style.backgroundColor = 'rgba(59,130,246,0.1)';
+      localStorageStatusEl.style.color = 'var(--text)';
+    }
+    
+    // Auto-hide after 5 seconds
+    setTimeout(() => {
+      localStorageStatusEl.style.display = 'none';
+    }, 5000);
   }
 
   function showCloudStatus(message, type = 'info') {
@@ -245,7 +300,9 @@
 
   function loadDB() { 
     try { 
-      return JSON.parse(localStorage.getItem(DB_KEY) || '{"labels":[]}'); 
+      const db = JSON.parse(localStorage.getItem(DB_KEY) || '{"labels":[]}');
+      updateDBStatus(db.labels.length);
+      return db;
     } catch(e) { 
       log("Error loading DB:", e);
       return {labels:[]}; 
@@ -254,12 +311,19 @@
 
   function saveDB(db) { 
     localStorage.setItem(DB_KEY, JSON.stringify(db)); 
+    updateDBStatus(db.labels.length);
     log("Database saved locally:", db.labels.length, "faces");
   }
 
-  function clearDB() { 
+  function updateDBStatus(count) {
+    dbStatusEl.textContent = `Data: ${count} wajah`;
+  }
+
+  function clearLocalDB() { 
     localStorage.removeItem(DB_KEY); 
-    log("Database cleared locally");
+    updateDBStatus(0);
+    log("Local database cleared");
+    showLocalStatus('✅ Semua data lokal telah dihapus', 'success');
   }
 
   function bestMatch(vec, db) { 
@@ -310,26 +374,124 @@
     return dot / (Math.sqrt(na) * Math.sqrt(nb) + 1e-9); 
   }
 
-  // ===== Cloudflare D1 Database Functions =====
-  async function testCloudConnection() {
-    const workerUrl = cfWorkerUrlEl.value.trim();
-    const apiToken = cfApiTokenEl.value.trim();
+  // ===== LOCAL STORAGE FUNCTIONS =====
+  function getLocalData() {
+    const db = loadDB();
+    const count = db.labels.length;
     
+    log("📱 Local database loaded:", count, "faces");
+    showLocalStatus(`📱 Data lokal: ${count} wajah tersimpan`, 'info');
+    
+    // Show preview of data
+    const preview = db.labels.slice(0, 3).map(l => l.name).join(', ');
+    if (count > 0) {
+      log("📋 Nama-nama:", preview + (count > 3 ? '...' : ''));
+      log("📊 Detail:", db.labels.map(l => `${l.name} (vector: ${l.vec.length})`));
+    }
+    
+    return db;
+  }
+
+  function saveCurrentFaceToLocal() {
+    if (!currentFaceDescriptor) {
+      showLocalStatus('❌ Tidak ada wajah yang terdeteksi', 'error');
+      log("❌ Tidak ada wajah yang terdeteksi untuk disimpan");
+      return false;
+    }
+
+    const name = manualNameEl.value.trim();
+    if (!name) {
+      showLocalStatus('❌ Masukkan nama terlebih dahulu', 'error');
+      log("❌ Nama belum diisi");
+      manualNameEl.focus();
+      return false;
+    }
+
+    const db = loadDB();
+    
+    // Remove existing entries with same name
+    db.labels = db.labels.filter(entry => entry.name !== name);
+    
+    // Add new entry
+    db.labels.push({
+      name: name,
+      vec: Array.from(currentFaceDescriptor)
+    });
+    
+    saveDB(db);
+    
+    showLocalStatus(`✅ Wajah "${name}" berhasil disimpan ke local storage`, 'success');
+    log(`✅ Face saved locally: ${name}`);
+    
+    // Clear input
+    manualNameEl.value = '';
+    
+    return true;
+  }
+
+  function exportLocalDataToFile() {
+    const db = loadDB();
+    
+    if (db.labels.length === 0) {
+      showLocalStatus('⚠️ Tidak ada data lokal untuk diexport', 'info');
+      return;
+    }
+    
+    const blob = new Blob([JSON.stringify(db, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `face_db_local_${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    
+    log("💾 Local database exported");
+    showLocalStatus(`✅ ${db.labels.length} wajah diexport ke file`, 'success');
+  }
+
+  async function importLocalDataFromFile(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    try {
+      const text = await file.text();
+      const db = JSON.parse(text);
+      
+      if (!db || !Array.isArray(db.labels)) {
+        throw new Error('Format file tidak valid');
+      }
+
+      saveDB(db);
+      showLocalStatus(`✅ Database imported: ${db.labels.length} wajah dimuat`, 'success');
+      log(`📥 Database imported: ${db.labels.length} faces`);
+      
+      // Reset file input
+      e.target.value = '';
+    } catch (error) {
+      showLocalStatus(`❌ Error importing: ${error.message}`, 'error');
+      log("❌ Import error:", error);
+    }
+  }
+
+  // ===== CLOUDFLARE FUNCTIONS =====
+  function getWorkerUrl() {
+    let workerUrl = cfWorkerUrlEl.value.trim();
+    workerUrl = workerUrl.replace(/\/$/, '');
+    return workerUrl;
+  }
+
+  async function testCloudConnection() {
+    const workerUrl = getWorkerUrl();
     if (!workerUrl) {
       showCloudStatus('❌ Worker URL belum diisi', 'error');
       return false;
     }
     
-    testCloudConnBtn.disabled = true;
-    testCloudConnBtn.textContent = "🔍 Testing...";
+    btnTestCloud.disabled = true;
+    btnTestCloud.textContent = "🔍 Testing...";
     
     try {
-      const response = await fetch(`${workerUrl}/health`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${apiToken}`
-        }
-      });
+      const response = await fetch(`${workerUrl}/health`);
       
       if (response.ok) {
         const data = await response.json();
@@ -337,58 +499,37 @@
         log("✅ Cloudflare connection successful");
         return true;
       } else {
-        throw new Error(`HTTP ${response.status}`);
+        const errorText = await response.text();
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
       }
     } catch (error) {
-      showCloudStatus(`❌ Gagal terhubung ke Cloudflare: ${error.message}`, 'error');
+      showCloudStatus(`❌ Gagal terhubung: ${error.message}`, 'error');
       log("❌ Cloudflare connection failed:", error);
       return false;
     } finally {
-      testCloudConnBtn.disabled = false;
-      testCloudConnBtn.textContent = "🔍 Test Connection";
+      btnTestCloud.disabled = false;
+      btnTestCloud.textContent = "🔍 Test Koneksi";
     }
-  }
-
-  async function getLocalData() {
-    const db = loadDB();
-    log("📱 Local database loaded:", db.labels.length, "faces");
-    showCloudStatus(`📱 Local data: ${db.labels.length} wajah tersimpan`, 'info');
-    
-    // Show preview of data
-    const preview = db.labels.slice(0, 3).map(l => l.name).join(', ');
-    if (db.labels.length > 0) {
-      log("📋 Sample names:", preview + (db.labels.length > 3 ? '...' : ''));
-    }
-    
-    return db;
   }
 
   async function getCloudData() {
-    const workerUrl = cfWorkerUrlEl.value.trim();
-    const apiToken = cfApiTokenEl.value.trim();
-    
+    const workerUrl = getWorkerUrl();
     if (!workerUrl) {
       showCloudStatus('❌ Worker URL belum diisi', 'error');
       return;
     }
     
-    getCloudDataBtn.disabled = true;
-    getCloudDataBtn.textContent = "☁️ Loading...";
+    btnGetCloud.disabled = true;
+    btnGetCloud.textContent = "☁️ Loading...";
     
     try {
-      const response = await fetch(`${workerUrl}/data`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${apiToken}`
-        }
-      });
+      const response = await fetch(`${workerUrl}/data`);
       
       if (response.ok) {
         const data = await response.json();
         log("☁️ Cloud database loaded:", data.length || 0, "faces");
         showCloudStatus(`☁️ Cloud data: ${data.length || 0} wajah tersimpan`, 'success');
         
-        // Display data
         if (data.length > 0) {
           const preview = data.slice(0, 3).map(item => item.name).join(', ');
           log("📋 Cloud names:", preview + (data.length > 3 ? '...' : ''));
@@ -396,22 +537,21 @@
         
         return data;
       } else {
-        throw new Error(`HTTP ${response.status}: ${await response.text()}`);
+        const errorText = await response.text();
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
       }
     } catch (error) {
-      showCloudStatus(`❌ Gagal mengambil data dari cloud: ${error.message}`, 'error');
+      showCloudStatus(`❌ Gagal mengambil data: ${error.message}`, 'error');
       log("❌ Failed to get cloud data:", error);
       return null;
     } finally {
-      getCloudDataBtn.disabled = false;
-      getCloudDataBtn.textContent = "☁️ Get Cloud Data";
+      btnGetCloud.disabled = false;
+      btnGetCloud.textContent = "☁️ Ambil Data dari Cloud";
     }
   }
 
-  async function setToCloud() {
-    const workerUrl = cfWorkerUrlEl.value.trim();
-    const apiToken = cfApiTokenEl.value.trim();
-    
+  async function syncToCloud() {
+    const workerUrl = getWorkerUrl();
     if (!workerUrl) {
       showCloudStatus('❌ Worker URL belum diisi', 'error');
       return;
@@ -424,44 +564,31 @@
       return;
     }
     
-    setToCloudBtn.disabled = true;
-    setToCloudBtn.textContent = "📤 Syncing...";
+    btnSyncToCloud.disabled = true;
+    btnSyncToCloud.textContent = "📤 Syncing...";
     
     try {
-      // First, clear existing data in cloud
-      await fetch(`${workerUrl}/data/clear`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${apiToken}`,
-          'Content-Type': 'application/json'
-        }
-      });
+      // Clear existing data in cloud
+      await fetch(`${workerUrl}/data/clear`, { method: 'DELETE' });
       
-      // Then upload all local data
+      // Upload all local data
       for (const label of localDB.labels) {
-        const response = await fetch(`${workerUrl}/data`, {
+        await fetch(`${workerUrl}/data`, {
           method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${apiToken}`,
-            'Content-Type': 'application/json'
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(label)
         });
-        
-        if (!response.ok) {
-          throw new Error(`Failed to upload ${label.name}`);
-        }
       }
       
       showCloudStatus(`✅ ${localDB.labels.length} wajah berhasil disinkronisasi ke cloud!`, 'success');
       log(`✅ Data synced to cloud: ${localDB.labels.length} faces`);
       
     } catch (error) {
-      showCloudStatus(`❌ Gagal sinkronisasi ke cloud: ${error.message}`, 'error');
+      showCloudStatus(`❌ Gagal sinkronisasi: ${error.message}`, 'error');
       log("❌ Failed to sync to cloud:", error);
     } finally {
-      setToCloudBtn.disabled = false;
-      setToCloudBtn.textContent = "📤 Sync to Cloud";
+      btnSyncToCloud.disabled = false;
+      btnSyncToCloud.textContent = "📤 Sync ke Cloud";
     }
   }
 
@@ -508,6 +635,10 @@
       statusEl.textContent = '✅ Status: OpenCV siap. Klik Start untuk mulai.';
       btnS.disabled = false;
       btnEnroll.disabled = false;
+      btnSaveCurrent.disabled = false;
+      
+      // Load initial DB status
+      loadDB();
       
       // Test ESP32 connection on startup
       setTimeout(testESP32Connection, 1000);
@@ -738,7 +869,7 @@
   btnEnroll.onclick = () => {
     const name = (nameEl.value || '').trim();
     if (!name) {
-      alert('⚠️ Please enter a name for enrollment');
+      alert('⚠️ Masukkan nama untuk enrollment otomatis');
       return;
     }
     
@@ -749,59 +880,28 @@
     log(`🎯 Starting enrollment for: ${name}`);
   };
 
-  btnClear.onclick = () => {
-    if (confirm('🗑️ Are you sure you want to clear all face data?')) {
-      clearDB();
-      alert('✅ Database cleared successfully');
+  btnExport.onclick = exportLocalDataToFile;
+
+  // Local Storage Event Handlers
+  btnSaveCurrent.onclick = saveCurrentFaceToLocal;
+  btnGetLocal.onclick = getLocalData;
+  btnClearLocal.onclick = () => {
+    if (confirm('🗑️ Apakah Anda yakin ingin menghapus semua data lokal?')) {
+      clearLocalDB();
     }
   };
+  btnExportLocal.onclick = exportLocalDataToFile;
+  importLocalEl.onchange = importLocalDataFromFile;
 
-  btnExport.onclick = () => {
-    const db = loadDB();
-    const blob = new Blob([JSON.stringify(db, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `face_db_${new Date().toISOString().split('T')[0]}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-    log("💾 Database exported");
-  };
-
-  inImport.onchange = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    try {
-      const text = await file.text();
-      const db = JSON.parse(text);
-      
-      if (!db || !Array.isArray(db.labels)) {
-        throw new Error('Invalid database format');
-      }
-
-      saveDB(db);
-      alert(`✅ Database imported successfully! ${db.labels.length} faces loaded.`);
-      log(`📥 Database imported: ${db.labels.length} faces`);
-      
-      // Reset file input
-      e.target.value = '';
-    } catch (error) {
-      alert('❌ Error importing database: ' + error.message);
-      log("❌ Import error:", error);
-    }
-  };
+  // Cloudflare Event Handlers
+  btnGetCloud.onclick = getCloudData;
+  btnSyncToCloud.onclick = syncToCloud;
+  btnLoadFromCloud.onclick = loadFromCloud;
+  btnTestCloud.onclick = testCloudConnection;
 
   btnTestOn.onclick = () => callLED('on');
   btnTestOff.onclick = () => callLED('off');
   testConnBtn.onclick = testESP32Connection;
-
-  // Cloudflare event handlers
-  getLocalDataBtn.onclick = getLocalData;
-  getCloudDataBtn.onclick = getCloudData;
-  setToCloudBtn.onclick = setToCloud;
-  loadFromCloudBtn.onclick = loadFromCloud;
-  testCloudConnBtn.onclick = testCloudConnection;
 
   camSourceEl.onchange = () => {
     if (running) {
@@ -876,6 +976,9 @@
               
               // Compute LBP descriptor
               const descriptor = lbpHistFromBytes(resized.data, resized.cols, resized.rows);
+              
+              // Simpan descriptor untuk tombol "Simpan Wajah Sekarang"
+              currentFaceDescriptor = descriptor;
 
               if (enrolling) {
                 // Enrollment mode
@@ -902,6 +1005,7 @@
                   
                   statusEl.textContent = `✅ Enrollment completed for "${nameEl.value.trim()}"`;
                   log(`✅ Enrollment completed: ${nameEl.value.trim()}`);
+                  showLocalStatus(`✅ Enrollment otomatis selesai: ${nameEl.value.trim()}`, 'success');
                 }
               } else {
                 // Recognition mode
@@ -940,6 +1044,8 @@
               // Cleanup
               roi.delete();
               resized.delete();
+            } else {
+              currentFaceDescriptor = null; // Reset jika tidak ada wajah
             }
 
             // Update FPS counter
@@ -976,11 +1082,12 @@
     const fpsText = `FPS: ${Math.round(procFPS)}`;
     const facesText = `Faces: ${facesCount}`;
     const enrollText = enrolling ? `Enrolling: ${nameEl.value.trim()} (${enrollLeft} left)` : '';
+    const saveText = currentFaceDescriptor ? '💾 Siap simpan' : '⏳ Tunggu wajah';
     
     ctx.save();
     ctx.font = '14px system-ui, Segoe UI, Roboto, Arial';
     
-    const texts = [fpsText, facesText];
+    const texts = [fpsText, facesText, saveText];
     if (enrolling) texts.push(enrollText);
     
     const maxWidth = Math.max(...texts.map(t => ctx.measureText(t).width)) + padding * 2;
@@ -1003,14 +1110,13 @@
   document.addEventListener('DOMContentLoaded', () => {
     log("🚀 Face Recognition System Initialized");
     log("💡 Connect to ESP32-Camera-AP WiFi to use ESP32 camera");
-    log("☁️ Configure Cloudflare Worker URL to enable cloud storage");
+    log("💾 Local storage ready - gunakan tombol 'Simpan Wajah Sekarang'");
     
-    // Load saved Cloudflare settings
-    const savedWorkerUrl = localStorage.getItem('cf_worker_url');
-    const savedApiToken = localStorage.getItem('cf_api_token');
+    // Auto-fill Cloudflare settings
+    cfWorkerUrlEl.value = 'https://iot.stevanusstudent.workers.dev';
     
-    if (savedWorkerUrl) cfWorkerUrlEl.value = savedWorkerUrl;
-    if (savedApiToken) cfApiTokenEl.value = savedApiToken;
+    // Load initial DB status
+    getLocalData();
     
     // Save Cloudflare settings on change
     cfWorkerUrlEl.addEventListener('change', () => {
