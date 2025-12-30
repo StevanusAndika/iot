@@ -1,0 +1,9 @@
+name = "crud-worker-d1"
+main = "src/worker.js"
+compatibility_date = "2024-12-27"
+
+[[d1_databases]]
+binding = "face_recognition_db"
+database_name = "face-recognition-db"
+database_id = "ad63ee7a-4f08-420e-bf3a-4af688096ce6"
+id = "rate-limit-kv"
