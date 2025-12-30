@@ -55,23 +55,6 @@ graph TD
   - CORS support
   - JSON API endpoints
 
-## 🖥️ Interface Sistem
-
-### Antrian Web App
-**URL**: `http://localhost/iot/` atau `file:///C:/laragon/www/iot/index.html`
-
-### Dashboard Features:
-![Dashboard Antrian](https://via.placeholder.com/800x400/4A90E2/FFFFFF?text=Face+Recognition+Dashboard)
-
-**Fitur Utama:**
-1. **Camera Selection** - Pilih antara Webcam atau ESP32 Camera
-2. **Face Enrollment** - Daftarkan wajah baru dengan threshold cosine
-3. **Local Storage Management** - Simpan, load, export data lokal
-4. **Cloudflare Integration** - Sinkronisasi dengan Cloudflare D1
-5. **ESP32 Control** - Test LED dan koneksi ESP32
-
-### ESP32 Control Panel
-![ESP32 Control](https://via.placeholder.com/600x300/27AE60/FFFFFF?text=ESP32+LED+Control+Panel)
 
 ## ⚙️ Spesifikasi Teknis
 
