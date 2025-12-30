@@ -1,0 +1,26 @@
+:root{--bg:#0f1720;--panel:#0b1220;--text:#e6eef6;--muted:#8fa4bf;--btn:#2b6cb0;--btn2:#334155;--border:#1b2b48;--success:#10b981;--error:#ef4444}
+  *{box-sizing:border-box}
+  body{margin:16px;background:var(--bg);color:var(--text);font:14px/1.55 system-ui,Segoe UI,Roboto,Arial}
+  .card{max-width:1200px;margin:auto;background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:20px;box-shadow:0 10px 24px rgba(0,0,0,.5)}
+  h2{margin:0 0 15px;color:var(--text)}
+  .muted{color:var(--muted)}
+  label{display:block;margin:.5rem 0 .2rem;color:#9fb0c9;font-size:13px}
+  input,select{width:100%;padding:10px;border-radius:8px;border:1px solid #20314a;background:#071623;color:#dfeefc;font-size:14px}
+  button{padding:10px 16px;border:0;border-radius:10px;background:var(--btn);color:#fff;cursor:pointer;font-size:14px;transition:all 0.2s}
+  button:hover{opacity:0.9;transform:translateY(-1px)}
+  button.secondary{background:var(--btn2)}
+  button.success{background:var(--success)}
+  button.error{background:var(--error)}
+  button:disabled{opacity:.6;cursor:not-allowed;transform:none}
+  .grid{display:grid;grid-template-columns:1fr 140px 140px 220px;gap:12px}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:end}
+  #canvas{width:100%;max-width:1000px;border-radius:10px;background:#000;display:block;border:2px solid var(--border)}
+  #video{width:100%;max-width:1000px;border-radius:10px;margin:10px 0;display:none;opacity:.9;border:2px solid var(--border)}
+  .pill{display:inline-block;padding:6px 12px;border-radius:999px;background:#1a2a44;margin-left:8px;font-size:12px}
+  pre{white-space:pre-wrap;background:#071623;padding:12px;border-radius:8px;max-height:200px;overflow-y:auto;font-size:12px}
+  .status-connected{color:var(--success);background:rgba(16,185,129,0.1);padding:8px 12px;border-radius:6px;font-size:13px}
+  .status-disconnected{color:var(--error);background:rgba(239,68,68,0.1);padding:8px 12px;border-radius:6px;font-size:13px}
+  .section{margin-bottom:20px;padding-bottom:20px;border-bottom:1px solid var(--border)}
+  .cam-source{display:flex;align-items:center;gap:10px;margin:10px 0}
+  .storage-controls{display:flex;gap:10px;margin-top:15px;padding:15px;background:rgba(59,130,246,0.1);border-radius:8px;flex-wrap:wrap}
+  .storage-status{margin-top:10px;padding:10px;border-radius:8px;background:rgba(16,185,129,0.1);color:var(--success);font-size:13px}
