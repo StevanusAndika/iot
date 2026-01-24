@@ -4,6 +4,17 @@
 
 Sistem antrian cerdas yang menggunakan teknologi **face recognition** untuk mengidentifikasi pengunjung secara otomatis dengan integrasi **ESP32 camera** dan **Cloudflare D1 database**. Sistem ini dilengkapi dengan kemampuan penyimpanan data lokal dan cloud untuk sinkronisasi data wajah.
 
+## 🎥 DEMO VIDEO
+**Lihat demo lengkap sistem ini di:** [https://youtu.be/Z7Uz4THyW4w](https://youtu.be/Z7Uz4THyW4w)
+
+Demo video menunjukkan:
+- Setup dan konfigurasi sistem
+- Proses face enrollment
+- Face recognition real-time
+- Integrasi ESP32 LED control
+- Cloud sync dengan Cloudflare D1
+- Interface dan workflow lengkap
+
 ## 🎯 Fitur Utama
 
 - **Facial Recognition** menggunakan algoritma LBP + Cosine untuk identifikasi wajah
@@ -54,7 +65,6 @@ graph TD
   - API key authentication
   - CORS support
   - JSON API endpoints
-
 
 ## ⚙️ Spesifikasi Teknis
 
@@ -361,10 +371,10 @@ npx wrangler tail --format=pretty
 - **D1 Database**: https://developers.cloudflare.com/d1/
 
 ### **Contact & Support**
-- **Developer**: Stevanus Andika Galih Setiawan
+- **Developer**: Stevanus Andika Galih Setiawan - RK231
 - **Project**: Tugas Akhir Ubiquitous Computing
-- **Email**: [Your Email]
-- **Repository**: [GitHub Link]
+- **Demo Video**: [https://youtu.be/Z7Uz4THyW4w](https://youtu.be/Z7Uz4THyW4w)
+- **Repository**: [https://github.com/StevanusAndika/iot](https://github.com/StevanusAndika/iot)
 
 ## 🎯 Future Enhancements
 
@@ -385,4 +395,5 @@ npx wrangler tail --format=pretty
 
 **Sistem Antrian Face Recognition dengan ESP32 & Cloudflare D1**  
 © 2025 - Tugas Akhir Ubiquitous Computing  
-**Developer**: Stevanus Andika Galih Setiawan -RK231
+**Developer**: Stevanus Andika Galih Setiawan - RK231  
+**Demo Video**: [https://youtu.be/Z7Uz4THyW4w](https://youtu.be/Z7Uz4THyW4w)
