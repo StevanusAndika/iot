@@ -1,11 +1,13 @@
 <!doctype html>
 <html lang="id">
+
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Face Recognition + ESP32 Camera</title>
-<link rel ="stylesheet" href="style/style.css">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Face Recognition + ESP32 Camera</title>
+  <link rel="stylesheet" href="style/style.css">
 </head>
+
 <body>
   <div class="card">
     <h2>🎭 Face Recognition — ESP32 Camera Integration <span class="pill">LBP + Cosine</span></h2>
@@ -69,7 +71,7 @@
       <p class="muted" style="margin-bottom:10px;">
         Kelola data wajah di local storage browser
       </p>
-      
+
       <div class="storage-controls">
         <div style="flex:1">
           <label>📝 Nama untuk Simpan Manual</label>
@@ -80,13 +82,15 @@
           <button id="getLocalData" class="secondary">📱 Lihat Data Lokal</button>
           <button id="clearLocalData" class="error">🗑️ Hapus Semua Data Lokal</button>
           <button id="exportLocalData" class="secondary">📤 Export ke File</button>
-          <label class="secondary" style="padding:10px 16px;border-radius:10px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;background:#334155">
+          <label class="secondary"
+            style="padding:10px 16px;border-radius:10px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;background:#334155">
             📥 Import dari File<input id="importLocalData" type="file" accept="application/json" style="display:none">
           </label>
         </div>
       </div>
-      
-      <div id="localStorageStatus" style="display:none;margin-top:10px;padding:10px;border-radius:8px;background:rgba(59,130,246,0.1);color:var(--text);font-size:13px">
+
+      <div id="localStorageStatus"
+        style="display:none;margin-top:10px;padding:10px;border-radius:8px;background:rgba(59,130,246,0.1);color:var(--text);font-size:13px">
         Status local storage akan muncul di sini
       </div>
     </div>
@@ -97,7 +101,7 @@
       <p class="muted" style="margin-bottom:10px;">
         Sync data antara local storage dan Cloudflare D1 Database
       </p>
-      
+
       <div class="storage-controls">
         <div style="flex:1">
           <label>🔗 Worker URL (Cloudflare)</label>
@@ -114,7 +118,7 @@
           <button id="testCloudConnection" class="success">🔍 Test Koneksi</button>
         </div>
       </div>
-      
+
       <div id="cloudStatus" style="display:none;" class="storage-status">
         Cloudflare connection status will appear here
       </div>
@@ -142,7 +146,8 @@
         <div class="row">
           <button id="enroll" class="secondary" disabled>📸 Enroll Face (Otomatis)</button>
           <button id="exportDb" class="secondary">📤 Export JSON</button>
-          <div id="dbStatus" style="padding:10px 16px;border-radius:10px;background:rgba(59,130,246,0.1);color:var(--text);font-size:14px">
+          <div id="dbStatus"
+            style="padding:10px 16px;border-radius:10px;background:rgba(59,130,246,0.1);color:var(--text);font-size:14px">
             Data: 0 wajah
           </div>
         </div>
@@ -166,22 +171,49 @@
     </div>
 
     <p class="muted" id="status">⏳ Status: memuat OpenCV (WASM)…</p>
-    
+
     <div class="cam-source">
       <video id="video" playsinline autoplay muted></video>
       <canvas id="canvas" width="640" height="480"></canvas>
     </div>
 
     <p class="muted" style="margin-top:12px">
-      💡 <strong>Tips:</strong> Enroll wajah di pencahayaan baik dengan beberapa pose. 
+      💡 <strong>Tips:</strong> Enroll wajah di pencahayaan baik dengan beberapa pose.
       Pastikan ESP32 dan komputer dalam jaringan WiFi yang sama (ESP32-Camera-AP).
     </p>
-    
+
     <pre id="log" class="muted">Log akan muncul di sini...</pre>
+
+    <div class="section" style="margin-top:20px;">
+      <h3>📺 Video Tutorial / Demo</h3>
+      <div class="video-container"
+        style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);">
+        <iframe style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0;"
+          src="https://www.youtube.com/embed/Z7Uz4THyW4w?si=z0BZ_-Q1cBjW8I0k" title="YouTube video player"
+          frameborder="0"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          referrerpolicy="strict-origin-when-cross-origin" allowfullscreen>
+        </iframe>
+      </div>
+    </div>
   </div>
+
+
+  <footer
+    style="margin-top: 40px; padding: 20px; text-align: center; color: #9fb0c9; font-size: 14px; border-top: 1px solid rgba(255, 255, 255, 0.05); opacity: 0.8;">
+    <p>&copy; <span id="currentYear"></span> <a href="https://github.com/StevanusAndika" target="_blank"
+        style="color: #3b82f6; text-decoration: none; font-weight: 500; transition: color 0.3s;"
+        onmouseover="this.style.color='#60a5fa'" onmouseout="this.style.color='#3b82f6'">Stevanus Andika</a>. All rights
+      reserved.</p>
+  </footer>
+
+  <script>
+    document.getElementById('currentYear').textContent = new Date().getFullYear();
+  </script>
 
   <!-- OpenCV.js -->
   <script async src="https://docs.opencv.org/4.x/opencv.js" onload="onOpenCvReady()"></script>
   <script src="js/script.js"></script>
 </body>
+
 </html>
